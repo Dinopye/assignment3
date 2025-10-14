@@ -1,5 +1,7 @@
 const http = require('http');
 const url = require('url');
+const path = require('path');
+const sendFile = require('./sendFile');
 
 const availableTimes = {
     Monday: ["1:00", "1:30", "2:00", "2:30", "3:00", "3:30", "4:00", "4:30"],
@@ -16,6 +18,11 @@ let serverObj =  http.createServer(function(req,res){
 	console.log(req.url);
 	let urlObj = url.parse(req.url,true);
 	switch (urlObj.pathname) {
+		case "/":
+			// Serve index.html for root path
+			const indexPath = path.join(__dirname, 'public_html', 'index.html');
+			sendFile(indexPath, res);
+			break;
 		case "/schedule":
 			schedule(urlObj.query,res);
 			break;
@@ -26,8 +33,9 @@ let serverObj =  http.createServer(function(req,res){
 			check(urlObj.query,res);
 			break;
 		default:
-			sendError(res,400,"Invalid pathname. Use /schedule, /cancel, or /check");
-
+			// Try to serve as static file from public_html
+			const filePath = path.join(__dirname, 'public_html', urlObj.pathname);
+			sendFile(filePath, res);
 	}
 });
 
