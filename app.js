@@ -148,4 +148,4 @@ function isValidDayAndTime(day, time) {
 	return availableTimes[day] && availableTimes[day].includes(time);
 }
 
-serverObj.listen(3000,function(){console.log("listening on port 3000")});
+serverObj.listen(80,function(){console.log("listening on port 80")});
