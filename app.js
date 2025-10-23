@@ -16,126 +16,111 @@ const appointments = [
 
 let serverObj =  http.createServer(function(req,res){
 	console.log(req.url);
-	let urlObj = url.parse(req.url,true);
-	switch (urlObj.pathname) {
+	let obj_url = url.parse(req.url,true);
+	switch (obj_url.pathname) {
 		case "/":
-			// Serve index.html for root path
-			const indexPath = path.join(__dirname, 'public_html', 'index.html');
-			sendFile(indexPath, res);
+			const index_path = path.join(__dirname, 'public_html', 'index.html');
+			sendFile(index_path, res);
 			break;
 		case "/schedule":
-			schedule(urlObj.query,res);
+			schedule(obj_url.query,res);
 			break;
 		case "/cancel":
-			cancel(urlObj.query,res);
+			cancel(obj_url.query,res);
 			break;
 		case "/check":
-			check(urlObj.query,res);
+			check(obj_url.query,res);
 			break;
 		default:
-			// Try to serve as static file from public_html
-			const filePath = path.join(__dirname, 'public_html', urlObj.pathname);
-			sendFile(filePath, res);
+			const file_path = path.join(__dirname, 'public_html', obj_url.pathname);
+			sendFile(file_path, res);
 	}
 });
 
 function schedule(qObj, res) {
-	// Validate required parameters
-	if (!validateParams(qObj, ['name', 'day', 'time'])) {
+
+	if (!validate_parameters(qObj, ['name', 'day', 'time'])) {
 		sendError(res, 400, "Missing required parameters: name, day, time");
 		return;
 	}
 
-	// Check if the day exists and time is valid
 	if (!availableTimes[qObj.day]) {
 		sendError(res, 400, "Invalid weekday");
 		return;
 	}
-
-	// Check if the time exists in available times for that day
+	
 	const timeIndex = availableTimes[qObj.day].indexOf(qObj.time);
 	if (timeIndex === -1) {
-		sendResponse(res, 200, "Appointment not available");
+		send_response(res, 200, "Appointment not available");
 		return;
 	}
 
-	// Remove the time from available times
 	availableTimes[qObj.day].splice(timeIndex, 1);
-
-	// Add appointment to the appointments array
+	
 	appointments.push({
 		name: qObj.name,
 		day: qObj.day,
 		time: qObj.time
 	});
 
-	sendResponse(res, 200, "Appointment reserved");
+	send_response(res, 200, "Appointment reserved");
 }
 
 function cancel(qObj, res) {
-	// Validate required parameters
-	if (!validateParams(qObj, ['name', 'day', 'time'])) {
+
+	if (!validate_parameters(qObj, ['name', 'day', 'time'])) {
 		sendError(res, 400, "Missing required parameters: name, day, time");
 		return;
 	}
-
-	// Find the appointment
-	const appointmentIndex = appointments.findIndex(appt => 
+	
+	const appointment_index = appointments.findIndex(appt => 
 		appt.name === qObj.name && 
 		appt.day === qObj.day && 
 		appt.time === qObj.time
 	);
 
-	if (appointmentIndex === -1) {
-		sendResponse(res, 200, "Appointment not found");
+	if (appointment_index === -1) {
+		send_response(res, 200, "Appointment not found");
 		return;
 	}
 
-	// Remove appointment from appointments array
-	const canceledAppt = appointments.splice(appointmentIndex, 1)[0];
+	const canceled_apt = appointments.splice(appointment_index, 1)[0];
 
-	// Add the time back to available times for that day
-	if (!availableTimes[canceledAppt.day]) {
-		availableTimes[canceledAppt.day] = [];
+	if (!availableTimes[canceled_apt.day]) {
+		availableTimes[canceled_apt.day] = [];
 	}
-	availableTimes[canceledAppt.day].push(canceledAppt.time);
 	
-	// Sort the times to keep them in order
-	availableTimes[canceledAppt.day].sort();
-
-	sendResponse(res, 200, "Appointment has been canceled");
+	availableTimes[canceled_apt.day].push(canceled_apt.time);
+	availableTimes[canceled_apt.day].sort();
+	send_response(res, 200, "Appointment has been canceled");
 }
 
 function check(qObj, res) {
-	// Validate required parameters
-	if (!validateParams(qObj, ['day', 'time'])) {
+
+	if (!validate_parameters(qObj, ['day', 'time'])) {
 		sendError(res, 400, "Missing required parameters: day, time");
 		return;
 	}
 
-	// Check if the day exists and time is available
 	if (availableTimes[qObj.day] && availableTimes[qObj.day].includes(qObj.time)) {
-		sendResponse(res, 200, "Time is available");
+		send_response(res, 200, "Time is available");
 	} else {
-		sendResponse(res, 200, "Time is not available");
+		send_response(res, 200, "Time is not available");
 	}
 }
 
-// Helper function to send responses
-function sendResponse(response, statusCode, message) {
-	response.writeHead(statusCode, {'content-type': 'text/plain'});
+function send_response(response, status_code, message) {
+	response.writeHead(status_code, {'content-type': 'text/plain'});
 	response.write(message);
 	response.end();
 }
 
-// Helper function to send errors
 function sendError(response, status, message) {
-	sendResponse(response, status, message);
+	send_response(response, status, message);
 }
 
-// Helper function to validate query parameters
-function validateParams(qObj, requiredParams) {
-	for (let param of requiredParams) {
+function validate_parameters(qObj, required_parameters) {
+	for (let param of required_parameters) {
 		if (!qObj[param]) {
 			return false;
 		}
@@ -143,8 +128,7 @@ function validateParams(qObj, requiredParams) {
 	return true;
 }
 
-// Helper function to validate day and time
-function isValidDayAndTime(day, time) {
+function valid_day_time(day, time) {
 	return availableTimes[day] && availableTimes[day].includes(time);
 }
 
